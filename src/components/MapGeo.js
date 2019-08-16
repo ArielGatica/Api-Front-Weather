@@ -2,27 +2,46 @@ import React , { useState } from 'react';
 import { GoogleMap, withScriptjs, withGoogleMap, Marker, InfoWindow } from 'react-google-maps';
 import geoData from '../../src/data/geo-countries.json';
 import config from '../../src/config';
+import axios from 'axios';
 
-function Map() {
+const Map = () =>{
     const [selectedCountry, setSelectedCountry] = useState(null);
-    return( 
+    return(
         <GoogleMap
             defaultZoom={2}
             defaultCenter={{ lat: 37.0902, lng: -95.7129  }}
+            defaultOptions={{
+                zoomControl: false,
+                gestureHandling: 'none'
+            }}
         >
             {geoData.map(geo => (
                 <Marker
                     key={geo.country}
                     position={{ 
                         lat: geo.latitude, 
-                        lng: geo.longitude 
+                        lng: geo.longitude
                     }}
                     onClick={() =>{
-                        setSelectedCountry(geo)
+                        setSelectedCountry(geo);
+
+                        axios.post(`${config.API_BACKEND_WEATHER_LOCAL}/weather`, {
+                            lat: geo.latitude, 
+                            lng: geo.longitude
+                        })
+                        .then((response) =>{
+                            alert(
+                                "Clima " + JSON.stringify(response.data.summary) + '  ' + 
+                                " ºF: " + JSON.stringify(response.data.temperature)
+                            )
+                        })
+                        .catch((err) =>{
+                            console.error(err);
+                        });
                     }}
                     icon={{
                         url:'./icons/sun-location.png',
-                        scaledSize: new window.google.maps.Size(30, 30)
+                        scaledSize: new window.google.maps.Size(25, 25)
                     }}
                 />
             ))}
@@ -35,21 +54,19 @@ function Map() {
                     position={{ 
                         lat: selectedCountry.latitude, 
                         lng: selectedCountry.longitude 
-                    }}
-                >
+                    }}>
                     <div>
-                        <h3>{selectedCountry.name}</h3>
+                        <h4>{selectedCountry.name}</h4>
                     </div>
                 </InfoWindow>
             )}
-            
         </GoogleMap>
     )
 }
 
 const DrawMap = withScriptjs(withGoogleMap(Map));
 
-function MapGeo(){
+const MapGeo = () =>{
     return(
         <div style={{ width: "100vw", height: "100vh" }}>
             <DrawMap
